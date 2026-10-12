@@ -1,0 +1,98 @@
+# ============================================================
+#  CleanFishing - configuration
+# ============================================================
+
+game:
+  # Durée d'une journée en secondes (10 min par défaut)
+  day-duration-seconds: 600
+  # Compte à rebours avant le début de la partie quand assez de joueurs ont rejoint
+  lobby-countdown-seconds: 20
+  # Pause entre deux journées réussies (la boutique de Gertrude reste ouverte)
+  intermission-seconds: 30
+  min-players: 1
+  max-players: 8
+  # Symbole de la monnaie affichée
+  currency-symbol: "$"
+  # Paliers des premières journées. Au-delà, le dernier palier est multiplié par growth à chaque journée.
+  targets: [500, 1500, 3000, 5000, 8000]
+  target-growth-after-list: 1.35
+  # % de la cagnotte restante à la fin de la pause reporté sur la journée suivante (0 = tout est perdu : dépense-la chez Gertrude !)
+  carry-over-percent: 0
+  # Part des joueurs qui doivent valider auprès de Francis pour finir la journée (1.0 = tous)
+  francis-vote-ratio: 1.0
+  # Nombre d'offres dans la boutique de Gertrude chaque journée
+  shop-offers-per-day: 5
+  # Canne à pêche donnée au début de la partie : durée de l'enchantement Appât (Lure) 0-5
+  rod-lure-level: 2
+
+npc:
+  gertrude:
+    name: "Gertrude"
+    description: "Tavernière - Boutique"
+    # Skin : soit un pseudo Minecraft (résolu par le serveur) ...
+    skin-name: ""
+    # ... soit une texture exacte (valeur + signature base64, par ex. depuis mineskin.org). Prioritaire si remplie.
+    skin-texture: ""
+    skin-signature: ""
+  francis:
+    name: "Francis"
+    description: "Pêcheur des mers - Finir la journée"
+    skin-name: ""
+    skin-texture: ""
+    skin-signature: ""
+
+loot:
+  # Probabilité qu'une prise soit un objet (dynamite, filet, ...) au lieu d'un poisson
+  item-chance: 0.12
+  # Poids des objets pêchables
+  item-pool:
+    DYNAMITE: 3
+    NET: 3
+    BAIT: 4
+    LUCKY_CHARM: 2
+    HARPOON: 1
+  # Effet du porte-bonheur : multiplicateur de poids pour les poissons rare / épique / légendaire
+  lucky-charm-multiplier: 2.5
+  # Nombre de prises pendant lesquelles dure un porte-bonheur / un appât
+  lucky-charm-casts: 5
+  bait-casts: 5
+  # Appât : réduit le temps d'attente (ticks max d'attente de la touche)
+  bait-max-wait-ticks: 100
+
+items:
+  dynamite:
+    # Rayon de l'explosion (aucun bloc détruit) et nombre de poissons remontés
+    radius: 4.0
+    min-fish: 3
+    max-fish: 8
+    fuse-ticks: 40
+  net:
+    min-fish: 2
+    max-fish: 4
+    cooldown-seconds: 20
+  harpoon:
+    # Portée en blocs ; remonte 1 poisson d'une rareté minimale garantie (COMMON, UNCOMMON, RARE, EPIC, LEGENDARY)
+    range: 12
+    cooldown-seconds: 12
+    min-rarity: RARE
+  sand-timer:
+    # Secondes ajoutées à la journée en cours
+    bonus-seconds: 60
+
+shop:
+  # Prix et poids de chaque article dans le pool de la boutique
+  pool:
+    DYNAMITE:    { price: 150, weight: 10 }
+    NET:         { price: 120, weight: 10 }
+    HARPOON:     { price: 220, weight: 6 }
+    BAIT:        { price: 80,  weight: 12 }
+    LUCKY_CHARM: { price: 180, weight: 8 }
+    SAND_TIMER:  { price: 250, weight: 5 }
+  # Nombre d'exemplaires achetés d'un coup
+  stack-size:
+    DYNAMITE: 3
+    NET: 2
+    HARPOON: 2
+    BAIT: 3
+    LUCKY_CHARM: 1
+    SAND_TIMER: 1

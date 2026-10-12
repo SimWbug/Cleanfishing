@@ -1,0 +1,152 @@
+# ============================================================
+#  Catalogue des poissons (codex inclus)
+#  rarity : COMMON, UNCOMMON, RARE, EPIC, LEGENDARY
+#  material : icône par défaut (vanilla)
+#  item-model : (optionnel) clé d'un modèle 3D fourni par ton resource pack, ex. "cleangang:fish/crabe".
+#               Laisse vide tant que le pack n'est pas installé, sinon le client affichera un modèle manquant.
+#  value : valeur de base ; elle est multipliée selon la taille tirée (min-size .. max-size, en cm)
+#  weight : probabilité relative d'être pêché
+# ============================================================
+fish:
+  cod:
+    name: "Morue"
+    rarity: COMMON
+    material: COD
+    item-model: ""
+    value: 15
+    min-size: 30
+    max-size: 70
+    weight: 50
+    description: "Le classique des mers."
+  salmon:
+    name: "Saumon"
+    rarity: COMMON
+    material: SALMON
+    item-model: ""
+    value: 25
+    min-size: 50
+    max-size: 100
+    weight: 35
+    description: "Il remonte le courant, pas le moral."
+  tropical_fish:
+    name: "Poisson tropical"
+    rarity: UNCOMMON
+    material: TROPICAL_FISH
+    item-model: ""
+    value: 40
+    min-size: 8
+    max-size: 25
+    weight: 20
+    description: "Coloré, et il le sait."
+  pufferfish:
+    name: "Poisson-globe"
+    rarity: UNCOMMON
+    material: PUFFERFISH
+    item-model: ""
+    value: 60
+    min-size: 20
+    max-size: 45
+    weight: 15
+    description: "Ne le serre pas trop fort."
+
+  giant_cod:
+    name: "Morue géante"
+    rarity: RARE
+    material: COD
+    item-model: ""
+    value: 150
+    min-size: 120
+    max-size: 200
+    weight: 7
+    description: "Une morue qui a fait de la muscu."
+  giant_salmon:
+    name: "Saumon géant"
+    rarity: RARE
+    material: SALMON
+    item-model: ""
+    value: 200
+    min-size: 140
+    max-size: 230
+    weight: 6
+    description: "Il aurait fallu un filet plus grand."
+  giant_pufferfish:
+    name: "Globe géant"
+    rarity: RARE
+    material: PUFFERFISH
+    item-model: ""
+    value: 220
+    min-size: 90
+    max-size: 160
+    weight: 5
+    description: "Un ballon de plage... piquant."
+  giant_tuna:
+    name: "Thon géant"
+    rarity: EPIC
+    material: SALMON
+    item-model: ""
+    value: 350
+    min-size: 200
+    max-size: 320
+    weight: 3
+    description: "Le roi des abysses côtiers."
+  whale_shark:
+    name: "Requin-baleine"
+    rarity: EPIC
+    material: PRISMARINE_SHARD
+    item-model: ""
+    value: 500
+    min-size: 400
+    max-size: 900
+    weight: 2
+    description: "Doux géant, grosse prime."
+  coelacanth:
+    name: "Cœlacanthe"
+    rarity: EPIC
+    material: PRISMARINE_CRYSTALS
+    item-model: ""
+    value: 700
+    min-size: 120
+    max-size: 190
+    weight: 1.5
+    description: "Un fossile vivant. Presque une relique."
+
+  legendary_crab:
+    name: "Crabe colossal"
+    rarity: LEGENDARY
+    material: NAUTILUS_SHELL
+    item-model: ""
+    value: 1200
+    min-size: 250
+    max-size: 400
+    weight: 0.8
+    description: "Ses pinces ont déjà coupé des filets en deux."
+  legendary_octopus:
+    name: "Pieuvre abyssale"
+    rarity: LEGENDARY
+    material: HEART_OF_THE_SEA
+    item-model: ""
+    value: 1500
+    min-size: 300
+    max-size: 600
+    weight: 0.6
+    description: "Huit bras, aucune envie de se faire pêcher."
+  golden_koi:
+    name: "Carpe dorée"
+    rarity: LEGENDARY
+    material: GOLD_NUGGET
+    item-model: ""
+    value: 1000
+    min-size: 60
+    max-size: 110
+    weight: 0.9
+    description: "Elle rapporte exactement ce qu'elle pèse en or."
+  kraken_spawn:
+    name: "Rejeton du Kraken"
+    rarity: LEGENDARY
+    material: ECHO_SHARD
+    item-model: ""
+    value: 2000
+    min-size: 500
+    max-size: 900
+    weight: 0.35
+    description: "Si c'est le petit, tu ne veux pas voir le parent."
