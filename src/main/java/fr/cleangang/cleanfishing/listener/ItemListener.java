@@ -2,6 +2,8 @@ package fr.cleangang.cleanfishing.listener;
 
 import fr.cleangang.cleanfishing.CleanFishingPlugin;
 import fr.cleangang.cleanfishing.game.Game;
+import fr.cleangang.cleanfishing.gui.AdminGui;
+import fr.cleangang.cleanfishing.gui.ArenaMenuGui;
 import fr.cleangang.cleanfishing.gui.CodexGui;
 import fr.cleangang.cleanfishing.item.GameItem;
 import fr.cleangang.cleanfishing.item.ItemFactory;
@@ -14,7 +16,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
-/** Clic droit sur les objets du jeu (dynamite, filet, codex...), uniquement pour les joueurs en partie. */
+/** Clic droit sur les objets du jeu (dynamite, filet, codex, menu des îles...), uniquement pour les joueurs en partie. */
 public final class ItemListener implements Listener {
 
     private final CleanFishingPlugin plugin;
@@ -48,13 +50,21 @@ public final class ItemListener implements Listener {
             return;
         }
         event.setCancelled(true);
-        if (ItemFactory.TAG_CODEX.equals(tag)) {
-            CodexGui.open(plugin, player, 0);
-            return;
-        }
-        GameItem gameItem = GameItem.parse(tag);
-        if (gameItem != null) {
-            game.useItem(player, gameItem, item);
+        switch (tag) {
+            case ItemFactory.TAG_CODEX -> CodexGui.open(plugin, player, 0);
+            case ItemFactory.TAG_MENU -> ArenaMenuGui.open(plugin, player);
+            case ItemFactory.TAG_ADMIN -> {
+                if (player.hasPermission("cleanfishing.admin")) {
+                    AdminGui.openArenas(plugin, player);
+                }
+            }
+            case ItemFactory.TAG_LEAVE -> game.leave(player, false);
+            default -> {
+                GameItem gameItem = GameItem.parse(tag);
+                if (gameItem != null) {
+                    game.useItem(player, gameItem, item);
+                }
+            }
         }
     }
 }

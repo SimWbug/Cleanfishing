@@ -7,7 +7,7 @@ description: Mini-jeu de pêche coopératif par journées, avec boutique, objets
 commands:
   cfish:
     description: Commandes CleanFishing
-    usage: /cfish <join|leave|codex|admin>
+    usage: /cfish <join|leave|codex|menu|admin>
     aliases: [cleanfishing, pechejeu]
 permissions:
   cleanfishing.play:

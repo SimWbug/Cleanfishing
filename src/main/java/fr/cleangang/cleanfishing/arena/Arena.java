@@ -32,9 +32,35 @@ public final class Arena {
     private Pos lobby;
     private Pos gertrude;
     private Pos francis;
+    /** Rayon de la zone de jeu autour du spawn ; 0 = valeur par défaut de config.yml (zone.default-radius). */
+    private int radius;
 
     public Arena(String name) {
         this.name = name;
+    }
+
+    public int radius() {
+        return radius;
+    }
+
+    public void radius(int radius) {
+        this.radius = Math.max(0, radius);
+    }
+
+    public int effectiveRadius(int fallback) {
+        return radius > 0 ? radius : fallback;
+    }
+
+    /** Vrai si la position est dans la zone de jeu (distance horizontale au spawn, toutes hauteurs). */
+    public boolean contains(Location loc, int fallbackRadius) {
+        Location center = spawn();
+        if (center == null || loc.getWorld() == null || !loc.getWorld().equals(center.getWorld())) {
+            return false;
+        }
+        double r = effectiveRadius(fallbackRadius);
+        double dx = loc.getX() - center.getX();
+        double dz = loc.getZ() - center.getZ();
+        return dx * dx + dz * dz <= r * r;
     }
 
     public String name() {

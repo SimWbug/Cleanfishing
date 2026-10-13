@@ -35,7 +35,7 @@ public final class ShopManager {
                 pool.add(new Entry(item, Math.max(1, s.getInt("price", 100)), Math.max(0.01, s.getDouble("weight", 1)), amount));
             }
         }
-        int wanted = Math.max(1, Math.min(7, plugin.getConfig().getInt("game.shop-offers-per-day", 5)));
+        int wanted = Math.max(1, Math.min(5,plugin.getConfig().getInt("game.shop-offers-per-day", 5)));
         List<ShopOffer> offers = new ArrayList<>();
         while (offers.size() < wanted && !pool.isEmpty()) {
             double total = pool.stream().mapToDouble(Entry::weight).sum();

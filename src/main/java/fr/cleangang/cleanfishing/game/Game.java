@@ -4,6 +4,7 @@ import fr.cleangang.cleanfishing.CleanFishingPlugin;
 import fr.cleangang.cleanfishing.arena.Arena;
 import fr.cleangang.cleanfishing.fish.FishType;
 import fr.cleangang.cleanfishing.fish.Rarity;
+import fr.cleangang.cleanfishing.gui.FrancisGui;
 import fr.cleangang.cleanfishing.gui.ShopGui;
 import fr.cleangang.cleanfishing.item.GameItem;
 import fr.cleangang.cleanfishing.shop.ShopOffer;
@@ -26,6 +27,7 @@ import org.bukkit.entity.FishHook;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitTask;
@@ -95,6 +97,7 @@ public final class Game {
     private int day = 0;
     private int target = 0;
     private int pot = 0;
+    private int rerollCount = 0;
     private int counter;
     private int dayTotal = 1;
     private int totalFish = 0;
@@ -107,6 +110,7 @@ public final class Game {
         this.arena = arena;
         this.counter = lobbyCountdown();
         npcIds.addAll(plugin.npcs().spawn(arena));
+        plugin.purgeHostiles(arena);
         this.ticker = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 20L, 20L);
     }
 
@@ -228,9 +232,7 @@ public final class Game {
         for (PotionEffect effect : p.getActivePotionEffects()) {
             p.removePotionEffect(effect.getType());
         }
-        p.getInventory().setItem(0, plugin.items().rod());
-        p.getInventory().setItem(8, plugin.items().codexBook());
-        p.getInventory().setHeldItemSlot(0);
+        plugin.items().giveKit(p, state == State.LOBBY);
     }
 
     private void heal(Player p) {
@@ -350,6 +352,8 @@ public final class Game {
         counter = dayTotal;
         francisVotes.clear();
         offers = plugin.shop().roll(random);
+        rerollCount = 0;
+        plugin.purgeHostiles(arena);
 
         Title title = Title.title(
                 Text.mm("<gold><bold>Journée " + day),
@@ -361,6 +365,7 @@ public final class Game {
                 d.dayEarned = 0;
             }
             heal(p);
+            plugin.items().stripLobbyItems(p);
             p.teleport(arena.spawn());
             p.showTitle(title);
             Fx.sound(p, "entity.player.levelup", 0.8f, 1.2f);
@@ -784,10 +789,65 @@ public final class Game {
         broadcast("<yellow>" + Text.esc(p.getName()) + " <gray>a acheté <white>" + offer.amount() + "x " + offer.item().displayName()
                 + " <gray>pour <red>-" + money(offer.price()) + "<gray>. Cagnotte : <green>" + money(pot));
         refreshHud();
+        refreshShops();
     }
 
-    /** Francis : vote pour terminer la journée (possible seulement si le palier est atteint). */
-    public void francis(Player p) {
+    /** Prix du prochain changement d'articles. */
+    public int rerollPrice() {
+        int base = Math.max(0, plugin.getConfig().getInt("shop.reroll.base-price", 40));
+        int step = Math.max(0, plugin.getConfig().getInt("shop.reroll.price-step", 40));
+        return base + step * rerollCount;
+    }
+
+    /** Changements restants aujourd'hui, ou -1 si illimité. */
+    public int rerollsLeft() {
+        int max = plugin.getConfig().getInt("shop.reroll.max-per-day", 0);
+        return max <= 0 ? -1 : Math.max(0, max - rerollCount);
+    }
+
+    public int rerollCount() {
+        return rerollCount;
+    }
+
+    /** Gertrude change ses articles contre une part de la cagnotte. */
+    public boolean reroll(Player p) {
+        if (state != State.RUNNING && state != State.INTERMISSION) {
+            return false;
+        }
+        if (rerollsLeft() == 0) {
+            p.sendMessage(Text.msg("<gold>Gertrude <gray>: Mes réserves sont vides pour aujourd'hui, mon grand."));
+            Fx.sound(p, "entity.villager.no", 1f, 1f);
+            return false;
+        }
+        int price = rerollPrice();
+        if (pot < price) {
+            p.sendMessage(Text.msg("<gold>Gertrude <gray>: Il manque <red>" + money(price - pot) + "<gray> dans la cagnotte."));
+            Fx.sound(p, "entity.villager.no", 1f, 1f);
+            return false;
+        }
+        pot -= price;
+        rerollCount++;
+        offers = plugin.shop().roll(random);
+        Fx.sound(p, "item.bundle.insert", 1f, 1f);
+        broadcast("<yellow>" + Text.esc(p.getName()) + " <gray>fait changer l'étal de Gertrude <gray>pour <red>-" + money(price)
+                + "<gray>. Cagnotte : <green>" + money(pot));
+        refreshHud();
+        refreshShops();
+        return true;
+    }
+
+    /** Remet à jour la boutique ouverte chez tous les joueurs de la partie (l'étal est partagé). */
+    private void refreshShops() {
+        for (Player viewer : online()) {
+            Inventory top = viewer.getOpenInventory().getTopInventory();
+            if (top.getHolder() instanceof ShopGui.Holder holder && holder.game() == this) {
+                ShopGui.render(plugin, this, top);
+            }
+        }
+    }
+
+    /** Francis : ouvre l'interface de fin de journée. */
+    public void openFrancis(Player p) {
         if (state == State.INTERMISSION) {
             p.sendMessage(Text.msg("<gold>Francis <gray>: La journée est déjà finie, profite de la boutique !"));
             return;
@@ -796,21 +856,53 @@ public final class Game {
             p.sendMessage(Text.msg("<gold>Francis <gray>: Les poissons ne sont pas encore au rendez-vous."));
             return;
         }
+        FrancisGui.open(plugin, this, p);
+    }
+
+    /**
+     * Vote pour terminer la journée (wantsEnd = true, possible seulement si le palier est atteint)
+     * ou pour continuer à pêcher (wantsEnd = false, retire le vote).
+     */
+    public void setEndVote(Player p, boolean wantsEnd) {
+        if (state != State.RUNNING) {
+            return;
+        }
+        UUID id = p.getUniqueId();
+        if (!wantsEnd) {
+            if (francisVotes.remove(id)) {
+                broadcast("<yellow>" + Text.esc(p.getName()) + " <gray>veut continuer à pêcher <dark_gray>(<white>"
+                        + francisVotes.size() + "<dark_gray>/<white>" + votesNeeded() + "<dark_gray>)");
+            }
+            return;
+        }
         if (pot < target) {
             p.sendMessage(Text.msg("<gold>Francis <gray>: Pas question de rentrer les mains vides ! Il manque encore <yellow>"
                     + money(target - pot) + "<gray> pour le palier."));
             return;
         }
-        UUID id = p.getUniqueId();
         if (!francisVotes.add(id)) {
-            francisVotes.remove(id);
-            broadcast("<yellow>" + Text.esc(p.getName()) + " <gray>veut continuer à pêcher <dark_gray>(<white>"
-                    + francisVotes.size() + "<dark_gray>/<white>" + votesNeeded() + "<dark_gray>)");
-            return;
+            return; // déjà voté
         }
         broadcast("<yellow>" + Text.esc(p.getName()) + " <gray>veut finir la journée <dark_gray>(<white>"
-                + francisVotes.size() + "<dark_gray>/<white>" + votesNeeded() + "<dark_gray>) <gray>- reparle à Francis pour annuler.");
+                + francisVotes.size() + "<dark_gray>/<white>" + votesNeeded() + "<dark_gray>)");
         checkFrancisVotes();
+    }
+
+    public boolean hasVoted(Player p) {
+        return francisVotes.contains(p.getUniqueId());
+    }
+
+    public int endVotes() {
+        return francisVotes.size();
+    }
+
+    public int endVotesRequired() {
+        return votesNeeded();
+    }
+
+    /** Secondes restantes dans la phase en cours (journée, pause, compte à rebours). */
+    public int secondsLeft() {
+        return counter;
     }
 
     private int votesNeeded() {

@@ -77,6 +77,18 @@ public final class NpcManager {
         return npc.getUniqueId();
     }
 
+    /** Tête portant le skin configuré du PNJ (pour les portraits d'interface). */
+    public org.bukkit.inventory.ItemStack headFor(String role) {
+        org.bukkit.inventory.ItemStack head = new org.bukkit.inventory.ItemStack(org.bukkit.Material.PLAYER_HEAD);
+        try {
+            head.setData(io.papermc.paper.datacomponent.DataComponentTypes.PROFILE,
+                    profileFor(plugin.getConfig().getConfigurationSection("npc." + role)));
+        } catch (RuntimeException ex) {
+            plugin.getLogger().warning("Portrait du PNJ '" + role + "' : skin invalide (" + ex.getMessage() + ")");
+        }
+        return head;
+    }
+
     private ResolvableProfile profileFor(ConfigurationSection cfg) {
         if (cfg == null) {
             return Mannequin.defaultProfile();

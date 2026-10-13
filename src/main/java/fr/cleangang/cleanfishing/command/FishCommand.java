@@ -3,6 +3,8 @@ package fr.cleangang.cleanfishing.command;
 import fr.cleangang.cleanfishing.CleanFishingPlugin;
 import fr.cleangang.cleanfishing.arena.Arena;
 import fr.cleangang.cleanfishing.game.Game;
+import fr.cleangang.cleanfishing.gui.AdminGui;
+import fr.cleangang.cleanfishing.gui.ArenaMenuGui;
 import fr.cleangang.cleanfishing.gui.CodexGui;
 import fr.cleangang.cleanfishing.util.Text;
 import org.bukkit.Location;
@@ -21,7 +23,7 @@ public final class FishCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> ADMIN_SUB = List.of(
             "create", "delete", "list", "info", "tp", "setspawn", "setlobby", "setgertrude", "setfrancis",
-            "start", "stop", "reload");
+            "start", "stop", "reload", "menu", "setradius", "removehut");
 
     private final CleanFishingPlugin plugin;
 
@@ -39,6 +41,7 @@ public final class FishCommand implements CommandExecutor, TabCompleter {
             case "join" -> join(sender, args);
             case "leave" -> leave(sender);
             case "codex" -> codex(sender);
+            case "menu" -> menu(sender);
             case "admin" -> {
                 if (!sender.hasPermission("cleanfishing.admin")) {
                     sender.sendMessage(Text.msg("<red>Tu n'as pas la permission."));
@@ -55,8 +58,9 @@ public final class FishCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(Text.msg("<yellow>/cfish join [arène]<gray> - rejoindre une partie"));
         sender.sendMessage(Text.msg("<yellow>/cfish leave<gray> - quitter la partie"));
         sender.sendMessage(Text.msg("<yellow>/cfish codex<gray> - ouvrir ton codex des poissons"));
+        sender.sendMessage(Text.msg("<yellow>/cfish menu<gray> - choisir une île"));
         if (sender.hasPermission("cleanfishing.admin")) {
-            sender.sendMessage(Text.msg("<gold>/cfish admin <create|delete|list|info|tp|setspawn|setlobby|setgertrude|setfrancis|start|stop|reload>"));
+            sender.sendMessage(Text.msg("<gold>/cfish admin <menu|create|delete|list|info|tp|setspawn|setlobby|setgertrude|setfrancis|removehut|setradius|start|stop|reload>"));
         }
     }
 
@@ -93,19 +97,9 @@ public final class FishCommand implements CommandExecutor, TabCompleter {
                 return;
             }
         }
-        if (!arena.isReady()) {
-            player.sendMessage(Text.msg("<red>Cette arène n'est pas prête <gray>(points manquants ou monde non chargé)."));
-            return;
-        }
-        Game existing = plugin.games().forArena(arena.name());
-        if (existing != null && existing.state() != Game.State.LOBBY) {
-            player.sendMessage(Text.msg("<red>Une partie est déjà en cours dans cette arène."));
-            return;
-        }
-        Game game = plugin.games().getOrCreate(arena);
-        if (!game.join(player)) {
-            player.sendMessage(Text.msg("<red>Impossible de rejoindre : la partie est pleine ou a déjà commencé."));
-            game.discardIfEmpty();
+        String error = plugin.games().tryJoin(player, arena);
+        if (error != null) {
+            player.sendMessage(Text.msg("<red>" + error));
         }
     }
 
@@ -147,6 +141,18 @@ public final class FishCommand implements CommandExecutor, TabCompleter {
         CodexGui.open(plugin, player, 0);
     }
 
+    private void menu(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(Text.msg("<red>Commande réservée aux joueurs."));
+            return;
+        }
+        if (!player.hasPermission("cleanfishing.play")) {
+            player.sendMessage(Text.msg("<red>Tu n'as pas la permission."));
+            return;
+        }
+        ArenaMenuGui.open(plugin, player);
+    }
+
     // ------------------------------------------------------------------ admin
 
     private void admin(CommandSender sender, String[] args) {
@@ -166,6 +172,13 @@ public final class FishCommand implements CommandExecutor, TabCompleter {
                     String status = g == null ? "libre" : g.state().name().toLowerCase(Locale.ROOT) + ", " + g.playerCount() + " joueur(s)";
                     sender.sendMessage(Text.msg("<yellow>" + Text.esc(a.name()) + " <gray>- " + (a.isReady() ? "<green>prête" : "<red>incomplète")
                             + " <dark_gray>(" + status + ")"));
+                }
+            }
+            case "menu" -> {
+                if (sender instanceof Player player) {
+                    AdminGui.openArenas(plugin, player);
+                } else {
+                    sender.sendMessage(Text.msg("<red>Commande réservée aux joueurs."));
                 }
             }
             case "reload" -> {
@@ -214,12 +227,16 @@ public final class FishCommand implements CommandExecutor, TabCompleter {
                     game.stop("L'arène a été supprimée par un administrateur.");
                 }
                 plugin.arenas().delete(arena.name());
-                sender.sendMessage(Text.msg("<green>Arène supprimée."));
+                plugin.huts().forget(arena.name());
+                sender.sendMessage(Text.msg("<green>Arène supprimée. <gray>Le cabanon éventuel reste en place."));
             }
             case "info" -> {
                 sender.sendMessage(Text.msg("<yellow>" + Text.esc(arena.name()) + "<gray> - " + (arena.isReady() ? "<green>prête" : "<red>incomplète")));
                 sender.sendMessage(Text.msg("<gray>spawn: " + mark(arena.spawnPos() != null) + " lobby: " + mark(arena.lobbyPos() != null)
                         + " gertrude: " + mark(arena.gertrudePos() != null) + " francis: " + mark(arena.francisPos() != null)));
+                sender.sendMessage(Text.msg("<gray>Zone sans monstres : rayon <white>"
+                        + arena.effectiveRadius(plugin.getConfig().getInt("zone.default-radius", 60)) + " blocs"
+                        + (arena.radius() > 0 ? "" : " <dark_gray>(défaut)")));
                 if (!arena.missing().isEmpty()) {
                     sender.sendMessage(Text.msg("<red>Manquant : <white>" + String.join(", ", arena.missing())));
                 }
@@ -236,12 +253,39 @@ public final class FishCommand implements CommandExecutor, TabCompleter {
                 }
                 player.teleport(loc);
             }
+            case "removehut" -> {
+                if (plugin.games().forArena(arena.name()) != null) {
+                    sender.sendMessage(Text.msg("<red>Une partie est en cours sur cette arène."));
+                    return;
+                }
+                sender.sendMessage(plugin.huts().undo(arena.name())
+                        ? Text.msg("<green>Cabanon retiré, terrain d'origine rétabli.")
+                        : Text.msg("<red>Aucun cabanon enregistré pour cette arène."));
+            }
             case "setspawn", "setlobby", "setgertrude", "setfrancis" -> {
                 if (!(sender instanceof Player player)) {
                     sender.sendMessage(Text.msg("<red>Commande réservée aux joueurs."));
                     return;
                 }
                 Location here = player.getLocation();
+                if (sub.equals("setgertrude")) {
+                    boolean withHut = plugin.getConfig().getBoolean("hut.auto-build", true)
+                            && !(args.length >= 4 && args[3].equalsIgnoreCase("nohut"));
+                    if (withHut && plugin.games().forArena(arena.name()) != null) {
+                        sender.sendMessage(Text.msg("<red>Une partie est en cours : arrête-la avant de construire le cabanon."));
+                        return;
+                    }
+                    var result = plugin.huts().placeGertrude(arena, player, withHut);
+                    if (result.spot() == null) {
+                        sender.sendMessage(Text.msg("<red>" + Text.esc(result.message())));
+                        return;
+                    }
+                    here = result.spot();
+                    if (withHut) {
+                        sender.sendMessage(Text.msg("<green>" + Text.esc(result.message())
+                                + " <gray>Annuler : <yellow>/cfish admin removehut " + Text.esc(arena.name())));
+                    }
+                }
                 switch (sub) {
                     case "setspawn" -> arena.spawn(here);
                     case "setlobby" -> arena.lobby(here);
@@ -253,6 +297,28 @@ public final class FishCommand implements CommandExecutor, TabCompleter {
                         + "<green>."
                         + (sub.equals("setgertrude") || sub.equals("setfrancis")
                         ? " <gray>Le PNJ regardera dans la même direction que toi." : "")));
+            }
+            case "setradius" -> {
+                if (args.length < 4) {
+                    sender.sendMessage(Text.msg("<red>Usage : /cfish admin setradius <arène> <rayon>"));
+                    return;
+                }
+                int radius;
+                try {
+                    radius = Integer.parseInt(args[3]);
+                } catch (NumberFormatException ex) {
+                    sender.sendMessage(Text.msg("<red>Le rayon doit être un nombre entier."));
+                    return;
+                }
+                if (radius < 5 || radius > 500) {
+                    sender.sendMessage(Text.msg("<red>Le rayon doit être compris entre 5 et 500 blocs."));
+                    return;
+                }
+                arena.radius(radius);
+                plugin.arenas().save();
+                sender.sendMessage(Text.msg("<green>Zone de l'arène <white>" + Text.esc(arena.name()) + "<green> : rayon de <white>"
+                        + radius + "<green> blocs autour du spawn. <gray>Aucun monstre hostile n'y apparaîtra."));
+                plugin.purgeHostiles(arena);
             }
             case "start" -> {
                 Game game = plugin.games().forArena(arena.name());
@@ -287,7 +353,7 @@ public final class FishCommand implements CommandExecutor, TabCompleter {
         List<String> out = new ArrayList<>();
         boolean admin = sender.hasPermission("cleanfishing.admin");
         if (args.length == 1) {
-            out.addAll(List.of("join", "leave", "codex"));
+            out.addAll(List.of("join", "leave", "codex", "menu"));
             if (admin) {
                 out.add("admin");
             }
@@ -297,9 +363,15 @@ public final class FishCommand implements CommandExecutor, TabCompleter {
             if (args.length == 2) {
                 out.addAll(ADMIN_SUB);
             } else if (args.length == 3 && !args[1].equalsIgnoreCase("create") && !args[1].equalsIgnoreCase("reload")
-                    && !args[1].equalsIgnoreCase("list")) {
+                    && !args[1].equalsIgnoreCase("list") && !args[1].equalsIgnoreCase("menu")) {
                 out.addAll(plugin.arenas().names());
             }
+        }
+        if (admin && args.length == 4 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("setradius")) {
+            out.addAll(List.of("30", "60", "100", "150"));
+        }
+        if (admin && args.length == 4 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("setgertrude")) {
+            out.add("nohut");
         }
         String prefix = args[args.length - 1].toLowerCase(Locale.ROOT);
         out.removeIf(s -> !s.toLowerCase(Locale.ROOT).startsWith(prefix));

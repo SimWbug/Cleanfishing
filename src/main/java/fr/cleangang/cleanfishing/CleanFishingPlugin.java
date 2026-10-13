@@ -1,6 +1,8 @@
 package fr.cleangang.cleanfishing;
 
+import fr.cleangang.cleanfishing.arena.Arena;
 import fr.cleangang.cleanfishing.arena.ArenaManager;
+import fr.cleangang.cleanfishing.build.HutBuilder;
 import fr.cleangang.cleanfishing.codex.CodexManager;
 import fr.cleangang.cleanfishing.command.FishCommand;
 import fr.cleangang.cleanfishing.fish.FishRegistry;
@@ -13,11 +15,15 @@ import fr.cleangang.cleanfishing.listener.GuiListener;
 import fr.cleangang.cleanfishing.listener.ItemListener;
 import fr.cleangang.cleanfishing.listener.NpcListener;
 import fr.cleangang.cleanfishing.listener.ProtectionListener;
+import fr.cleangang.cleanfishing.listener.ZoneListener;
 import fr.cleangang.cleanfishing.npc.NpcManager;
 import fr.cleangang.cleanfishing.shop.ShopManager;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.entity.Enemy;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mannequin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -40,6 +46,7 @@ public final class CleanFishingPlugin extends JavaPlugin {
     private CodexManager codex;
     private NpcManager npcs;
     private ShopManager shop;
+    private HutBuilder huts;
 
     @Override
     public void onEnable() {
@@ -52,6 +59,7 @@ public final class CleanFishingPlugin extends JavaPlugin {
         codex = new CodexManager(this);
         npcs = new NpcManager(this);
         shop = new ShopManager(this);
+        huts = new HutBuilder(this);
 
         fish.load();
         arenas.load();
@@ -70,6 +78,7 @@ public final class CleanFishingPlugin extends JavaPlugin {
         pm.registerEvents(new ProtectionListener(this), this);
         pm.registerEvents(new GuiListener(this), this);
         pm.registerEvents(new ConnectionListener(this), this);
+        pm.registerEvents(new ZoneListener(this), this);
 
         // nettoie d'éventuels PNJ orphelins déjà chargés (reste d'un crash)
         Bukkit.getScheduler().runTask(this, () -> {
@@ -111,6 +120,39 @@ public final class CleanFishingPlugin extends JavaPlugin {
         return (int) (Math.round(value / 50.0) * 50);
     }
 
+    /**
+     * Vrai si cette position est dans la zone sans monstres d'une arène.
+     * Selon zone.block-hostile-always : toujours, ou seulement quand une partie existe sur l'arène.
+     */
+    public boolean inProtectedZone(Location loc) {
+        boolean always = getConfig().getBoolean("zone.block-hostile-always", true);
+        int fallback = getConfig().getInt("zone.default-radius", 60);
+        for (Arena arena : arenas.all()) {
+            if (!arena.contains(loc, fallback)) {
+                continue;
+            }
+            if (always || games.forArena(arena.name()) != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Retire les monstres hostiles déjà présents dans la zone (ceux qui ont un nom personnalisé sont épargnés). */
+    public void purgeHostiles(Arena arena) {
+        Location center = arena.spawn();
+        if (center == null || center.getWorld() == null) {
+            return;
+        }
+        int fallback = getConfig().getInt("zone.default-radius", 60);
+        int r = arena.effectiveRadius(fallback);
+        for (Entity entity : center.getWorld().getNearbyEntities(center, r, Math.max(r, 64), r)) {
+            if (entity instanceof Enemy && entity.customName() == null && arena.contains(entity.getLocation(), fallback)) {
+                entity.remove();
+            }
+        }
+    }
+
     public ItemFactory items() {
         return items;
     }
@@ -141,5 +183,9 @@ public final class CleanFishingPlugin extends JavaPlugin {
 
     public ShopManager shop() {
         return shop;
+    }
+
+    public HutBuilder huts() {
+        return huts;
     }
 }

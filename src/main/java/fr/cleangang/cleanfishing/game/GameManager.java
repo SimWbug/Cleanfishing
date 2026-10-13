@@ -33,6 +33,46 @@ public final class GameManager {
         return byArena.computeIfAbsent(arena.name().toLowerCase(), k -> new Game(plugin, arena));
     }
 
+    /** Raison pour laquelle l'arène ne peut pas être rejointe maintenant, ou null si elle le peut. */
+    public String joinError(Arena arena) {
+        if (!arena.isReady()) {
+            return "Cette arène n'est pas prête (points manquants ou monde non chargé).";
+        }
+        Game game = forArena(arena.name());
+        if (game != null) {
+            if (game.state() != Game.State.LOBBY) {
+                return "Une partie est déjà en cours dans cette arène.";
+            }
+            if (game.playerCount() >= plugin.getConfig().getInt("game.max-players", 8)) {
+                return "Cette arène est pleine.";
+            }
+        }
+        return null;
+    }
+
+    /** Fait rejoindre l'arène au joueur. Renvoie un message d'erreur, ou null si c'est réussi. */
+    public String tryJoin(Player player, Arena arena) {
+        if (!player.hasPermission("cleanfishing.play")) {
+            return "Tu n'as pas la permission.";
+        }
+        if (of(player) != null) {
+            return "Tu es déjà dans une partie.";
+        }
+        if (plugin.states().hasPending(player.getUniqueId())) {
+            return "Tes affaires d'avant-partie sont en cours de restauration, réessaie dans un instant.";
+        }
+        String error = joinError(arena);
+        if (error != null) {
+            return error;
+        }
+        Game game = getOrCreate(arena);
+        if (!game.join(player)) {
+            game.discardIfEmpty();
+            return "Impossible de rejoindre : la partie est pleine ou a déjà commencé.";
+        }
+        return null;
+    }
+
     void bind(UUID player, Game game) {
         byPlayer.put(player, game);
     }

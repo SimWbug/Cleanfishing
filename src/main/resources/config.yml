@@ -25,6 +25,32 @@ game:
   # Canne à pêche donnée au début de la partie : durée de l'enchantement Appât (Lure) 0-5
   rod-lure-level: 2
 
+zone:
+  # Zone de jeu = disque autour du spawn de l'arène, de ce rayon en blocs (toutes hauteurs).
+  # Les monstres hostiles n'y apparaissent pas. Rayon propre à une arène : /cfish admin setradius <arène> <rayon>
+  default-radius: 60
+  # true  = zone protégée en permanence (recommandé : pas de monstres accumulés avant la partie)
+  # false = protégée seulement quand une partie existe sur l'arène
+  block-hostile-always: true
+
+hut:
+  # Quand on place Gertrude (interface admin ou /cfish admin setgertrude), un cabanon de pêcheur est construit autour d'elle.
+  auto-build: true
+  wall: SPRUCE_PLANKS
+  floor: OAK_PLANKS
+  pillar: OAK_LOG
+  counter: SPRUCE_PLANKS
+  # Bois du toit : DARK_OAK, SPRUCE, OAK, BIRCH, ACACIA, CHERRY...
+  roof-wood: DARK_OAK
+
+hotbar:
+  # Objet "Choisir une île" donné dans la salle d'attente (comme la tête de FindThePoulet).
+  # Pour une vraie tête de poisson : colle dans 'texture' la valeur base64 d'une tête
+  # (minecraft-heads.com, champ "Value"). Si 'texture' est vide, 'fallback-material' est utilisé.
+  menu-item:
+    texture: ""
+    fallback-material: TROPICAL_FISH
+
 npc:
   gertrude:
     name: "Gertrude"
@@ -80,6 +106,11 @@ items:
     bonus-seconds: 60
 
 shop:
+  # Relancer les 5 articles de Gertrude : payé avec la cagnotte, prix croissant. Remis à zéro chaque journée.
+  reroll:
+    base-price: 40       # prix du 1er changement
+    price-step: 40       # augmentation à chaque changement de la journée
+    max-per-day: 0       # 0 = illimité
   # Prix et poids de chaque article dans le pool de la boutique
   pool:
     DYNAMITE:    { price: 150, weight: 10 }
@@ -96,3 +127,7 @@ shop:
     BAIT: 3
     LUCKY_CHARM: 1
     SAND_TIMER: 1
+
+debug:
+  # true = écrit dans la console chaque clic sur Gertrude / Francis (aide au diagnostic)
+  npc-clicks: false
