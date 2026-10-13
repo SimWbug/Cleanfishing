@@ -143,7 +143,7 @@ public final class ShopGui {
             }
             ShopOffer offer = offers.get(i);
             boolean affordable = pot >= offer.price();
-            inventory.setItem(CHAIN_SLOTS[i], pane(Material.CHAIN, " "));
+            inventory.setItem(CHAIN_SLOTS[i], pane(chain(), " "));
 
             ItemStack stack = plugin.items().create(offer.item(), offer.amount());
             stack.editMeta(m -> {
@@ -201,6 +201,17 @@ public final class ShopGui {
             }
         }
         return -1;
+    }
+
+    /** La chaîne de fer a été renommée selon les versions (CHAIN / IRON_CHAIN) : on cherche par nom. */
+    private static Material chain() {
+        for (String name : new String[]{"IRON_CHAIN", "CHAIN"}) {
+            Material m = Material.matchMaterial(name);
+            if (m != null) {
+                return m;
+            }
+        }
+        return Material.IRON_BARS;
     }
 
     private static ItemStack pane(Material material, String name) {
