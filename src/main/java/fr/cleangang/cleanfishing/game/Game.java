@@ -594,7 +594,7 @@ public final class Game {
                         new Vector3f(scale), new AxisAngle4f()));
             }
         }, 2L);
-        Bukkit.getScheduler().runTaskLater(plugin, display::remove, 55L);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> display.remove(), 55L);
     }
 
     private void give(Player p, ItemStack stack) {

@@ -45,7 +45,7 @@ public final class GuiListener implements Listener {
             }
             int clicked = event.getSlot();
             if (clicked == ShopGui.CLOSE_SLOT) {
-                Bukkit.getScheduler().runTask(plugin, player::closeInventory);
+                Bukkit.getScheduler().runTask(plugin, () -> player.closeInventory());
                 return;
             }
             if (clicked == ShopGui.REROLL_SLOT) {
@@ -104,13 +104,13 @@ public final class GuiListener implements Listener {
                 game.setEndVote(player, true);
             } else if (clicked == FrancisGui.KEEP_SLOT) {
                 game.setEndVote(player, false);
-                Bukkit.getScheduler().runTask(plugin, player::closeInventory);
+                Bukkit.getScheduler().runTask(plugin, () -> player.closeInventory());
                 return;
             } else {
                 return;
             }
             if (game.state() != Game.State.RUNNING) {
-                Bukkit.getScheduler().runTask(plugin, player::closeInventory);
+                Bukkit.getScheduler().runTask(plugin, () -> player.closeInventory());
             } else {
                 FrancisGui.render(plugin, game, player, event.getView().getTopInventory());
             }
