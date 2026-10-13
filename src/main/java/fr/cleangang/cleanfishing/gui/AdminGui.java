@@ -32,6 +32,7 @@ public final class AdminGui {
     private static final int SET_GERTRUDE = 23;
     private static final int SET_FRANCIS = 25;
     private static final int REMOVE_HUT = 29;
+    private static final int BOARD = 33;
     private static final int BACK = 27;
     private static final int DELETE = 35;
     private static final int RADIUS = 31;
@@ -149,6 +150,13 @@ public final class AdminGui {
                 "<yellow>Clic gauche : +5   <yellow>Clic droit : -5",
                 "<gray>Avec Shift : 1 bloc à la fois"));
 
+        inventory.setItem(BOARD, button(Material.OAK_HANGING_SIGN, "<yellow>Panneau de classement",
+                arena.boardPos() != null ? "<green>Placé." : "<gray>Pas encore placé.",
+                "<gray>Classement flottant (meilleures journées,",
+                "<gray>plus grosses prises) au-dessus de toi.",
+                "",
+                "<yellow>Clic : placer ici",
+                "<yellow>Shift + clic : retirer"));
         inventory.setItem(BACK, button(Material.ARROW, "<yellow>Retour", "<gray>Liste des arènes."));
         inventory.setItem(DELETE, button(Material.TNT, "<dark_red>Supprimer l'arène",
                 "<gray>Arrête la partie et efface l'arène.", "", "<red>Shift + clic pour confirmer"));
@@ -241,6 +249,13 @@ public final class AdminGui {
                 arena.radius(Math.max(5, Math.min(500, next)));
                 plugin.arenas().save();
                 plugin.purgeHostiles(arena);
+                refresh(plugin, player, holder, arena);
+            }
+            case BOARD -> {
+                arena.board(shift ? null : player.getLocation().add(0, 2.2, 0));
+                plugin.arenas().save();
+                plugin.stats().refreshBoards();
+                player.sendMessage(Text.msg(shift ? "<green>Panneau de classement retiré." : "<green>Panneau de classement placé au-dessus de toi."));
                 refresh(plugin, player, holder, arena);
             }
             case BACK -> openArenas(plugin, player);

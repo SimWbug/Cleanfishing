@@ -3,6 +3,7 @@ package fr.cleangang.cleanfishing;
 import fr.cleangang.cleanfishing.arena.Arena;
 import fr.cleangang.cleanfishing.arena.ArenaManager;
 import fr.cleangang.cleanfishing.build.HutBuilder;
+import fr.cleangang.cleanfishing.cards.CardManager;
 import fr.cleangang.cleanfishing.codex.CodexManager;
 import fr.cleangang.cleanfishing.command.FishCommand;
 import fr.cleangang.cleanfishing.fish.FishRegistry;
@@ -17,6 +18,8 @@ import fr.cleangang.cleanfishing.listener.NpcListener;
 import fr.cleangang.cleanfishing.listener.ProtectionListener;
 import fr.cleangang.cleanfishing.listener.ZoneListener;
 import fr.cleangang.cleanfishing.npc.NpcManager;
+import fr.cleangang.cleanfishing.pack.PackManager;
+import fr.cleangang.cleanfishing.progress.StatsManager;
 import fr.cleangang.cleanfishing.shop.ShopManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -47,6 +50,9 @@ public final class CleanFishingPlugin extends JavaPlugin {
     private NpcManager npcs;
     private ShopManager shop;
     private HutBuilder huts;
+    private StatsManager stats;
+    private PackManager pack;
+    private CardManager cards;
 
     @Override
     public void onEnable() {
@@ -60,9 +66,14 @@ public final class CleanFishingPlugin extends JavaPlugin {
         npcs = new NpcManager(this);
         shop = new ShopManager(this);
         huts = new HutBuilder(this);
+        stats = new StatsManager(this);
+        pack = new PackManager(this);
+        cards = new CardManager(this);
 
         fish.load();
         arenas.load();
+        stats.load();
+        pack.load();
 
         PluginCommand command = getCommand("cfish");
         if (command != null) {
@@ -79,23 +90,36 @@ public final class CleanFishingPlugin extends JavaPlugin {
         pm.registerEvents(new GuiListener(this), this);
         pm.registerEvents(new ConnectionListener(this), this);
         pm.registerEvents(new ZoneListener(this), this);
+        pm.registerEvents(pack, this);
+        pm.registerEvents(cards, this);
+        cards.start();
 
         // nettoie d'éventuels PNJ orphelins déjà chargés (reste d'un crash)
         Bukkit.getScheduler().runTask(this, () -> {
             for (World world : Bukkit.getWorlds()) {
                 npcs.removeOrphans(world.getEntitiesByClass(Mannequin.class));
             }
+            stats.startBoards();
         });
         getLogger().info("CleanFishing activé.");
     }
 
     @Override
     public void onDisable() {
+        if (cards != null) {
+            cards.stop();
+        }
         if (games != null) {
             games.shutdown();
         }
         if (codex != null) {
             codex.flushAll();
+        }
+        if (stats != null) {
+            stats.stopBoards();
+        }
+        if (pack != null) {
+            pack.shutdown();
         }
     }
 
@@ -104,6 +128,10 @@ public final class CleanFishingPlugin extends JavaPlugin {
         reloadConfig();
         fish.load();
         arenas.load();
+        stats.load();
+        pack.load();
+        pack.resendToLoaded();
+        stats.startBoards();
     }
 
     /** Palier de la journée donnée : liste de config, puis croissance géométrique. */
@@ -187,5 +215,17 @@ public final class CleanFishingPlugin extends JavaPlugin {
 
     public HutBuilder huts() {
         return huts;
+    }
+
+    public StatsManager stats() {
+        return stats;
+    }
+
+    public PackManager pack() {
+        return pack;
+    }
+
+    public CardManager cards() {
+        return cards;
     }
 }

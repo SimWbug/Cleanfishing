@@ -5,6 +5,7 @@ import fr.cleangang.cleanfishing.game.Game;
 import fr.cleangang.cleanfishing.gui.AdminGui;
 import fr.cleangang.cleanfishing.gui.ArenaMenuGui;
 import fr.cleangang.cleanfishing.gui.CodexGui;
+import fr.cleangang.cleanfishing.gui.LobbyGui;
 import fr.cleangang.cleanfishing.item.GameItem;
 import fr.cleangang.cleanfishing.item.ItemFactory;
 import org.bukkit.entity.Player;
@@ -36,6 +37,11 @@ public final class ItemListener implements Listener {
         }
         Player player = event.getPlayer();
         Game game = plugin.games().of(player);
+        // carte de pouvoir visée : le clic droit la prend (et ne lance pas la canne)
+        if (game != null && plugin.cards().consumeClick(player)) {
+            event.setCancelled(true);
+            return;
+        }
         ItemStack item = event.getItem();
         String tag = plugin.items().tag(item);
         if (game == null) {
@@ -64,6 +70,7 @@ public final class ItemListener implements Listener {
                 }
             }
             case ItemFactory.TAG_LEAVE -> game.leave(player, false);
+            case ItemFactory.TAG_OPTIONS -> LobbyGui.open(plugin, game, player);
             default -> {
                 GameItem gameItem = GameItem.parse(tag);
                 if (gameItem != null) {

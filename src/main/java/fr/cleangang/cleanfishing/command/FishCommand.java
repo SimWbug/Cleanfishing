@@ -23,7 +23,7 @@ public final class FishCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> ADMIN_SUB = List.of(
             "create", "delete", "list", "info", "tp", "setspawn", "setlobby", "setgertrude", "setfrancis",
-            "start", "stop", "reload", "menu", "setradius", "removehut");
+            "start", "stop", "reload", "menu", "setradius", "removehut", "setboard", "removeboard");
 
     private final CleanFishingPlugin plugin;
 
@@ -42,6 +42,9 @@ public final class FishCommand implements CommandExecutor, TabCompleter {
             case "leave" -> leave(sender);
             case "codex" -> codex(sender);
             case "menu" -> menu(sender);
+            case "titres", "titles", "succes" -> titles(sender);
+            case "top", "classement" -> top(sender);
+            case "pouvoirs", "powers", "cartes" -> powers(sender);
             case "admin" -> {
                 if (!sender.hasPermission("cleanfishing.admin")) {
                     sender.sendMessage(Text.msg("<red>Tu n'as pas la permission."));
@@ -59,8 +62,11 @@ public final class FishCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(Text.msg("<yellow>/cfish leave<gray> - quitter la partie"));
         sender.sendMessage(Text.msg("<yellow>/cfish codex<gray> - ouvrir ton codex des poissons"));
         sender.sendMessage(Text.msg("<yellow>/cfish menu<gray> - choisir une île"));
+        sender.sendMessage(Text.msg("<yellow>/cfish titres<gray> - tes succès et ton titre"));
+        sender.sendMessage(Text.msg("<yellow>/cfish top<gray> - classement du serveur"));
+        sender.sendMessage(Text.msg("<yellow>/cfish pouvoirs<gray> - ton niveau et tes cartes de pouvoir"));
         if (sender.hasPermission("cleanfishing.admin")) {
-            sender.sendMessage(Text.msg("<gold>/cfish admin <menu|create|delete|list|info|tp|setspawn|setlobby|setgertrude|setfrancis|removehut|setradius|start|stop|reload>"));
+            sender.sendMessage(Text.msg("<gold>/cfish admin <menu|create|delete|list|info|tp|setspawn|setlobby|setgertrude|setfrancis|removehut|setradius|setboard|removeboard|start|stop|reload>"));
         }
     }
 
@@ -151,6 +157,59 @@ public final class FishCommand implements CommandExecutor, TabCompleter {
             return;
         }
         ArenaMenuGui.open(plugin, player);
+    }
+
+    private void titles(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(Text.msg("<red>Commande réservée aux joueurs."));
+            return;
+        }
+        fr.cleangang.cleanfishing.gui.TitleGui.open(plugin, player);
+    }
+
+    private void powers(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(Text.msg("<red>Commande réservée aux joueurs."));
+            return;
+        }
+        Game game = plugin.games().of(player);
+        if (game == null) {
+            player.sendMessage(Text.msg("<red>Tu n'es dans aucune partie."));
+            return;
+        }
+        var powers = game.powersOf(player);
+        player.sendMessage(Text.msg("<gold>Niveau <white>" + game.levelOf(player) + "<gold> - tes pouvoirs :"));
+        if (powers.isEmpty()) {
+            player.sendMessage(Text.mm("<dark_gray>  aucun pour l'instant (une carte tous les 2-3 niveaux)"));
+        }
+        powers.forEach((power, n) -> player.sendMessage(Text.mm("  " + power.tier().color() + power.displayName()
+                + " <white>x" + n + " <dark_gray>- <gray>" + power.line1() + " " + power.line2())));
+    }
+
+    private void top(CommandSender sender) {
+        String symbol = plugin.getConfig().getString("game.currency-symbol", "$");
+        sender.sendMessage(Text.msg("<gold><bold>Classement de la pêche"));
+        sender.sendMessage(Text.mm("<gold>Meilleures journées :"));
+        printTop(sender, plugin.stats().topDays(false, 5), e -> "<white>" + e.value() + " journée(s)");
+        var hardcore = plugin.stats().topDays(true, 3);
+        if (!hardcore.isEmpty()) {
+            sender.sendMessage(Text.mm("<dark_red>Hardcore :"));
+            printTop(sender, hardcore, e -> "<white>" + e.value() + " journée(s)");
+        }
+        sender.sendMessage(Text.mm("<gold>Plus grosses prises :"));
+        printTop(sender, plugin.stats().topCatches(5), e -> "<green>" + e.value() + symbol + " <dark_gray>" + Text.esc(e.detail()));
+    }
+
+    private void printTop(CommandSender sender, List<fr.cleangang.cleanfishing.progress.StatsManager.Entry> entries,
+                          java.util.function.Function<fr.cleangang.cleanfishing.progress.StatsManager.Entry, String> value) {
+        if (entries.isEmpty()) {
+            sender.sendMessage(Text.mm("<dark_gray>  personne pour l'instant"));
+            return;
+        }
+        int rank = 1;
+        for (var e : entries) {
+            sender.sendMessage(Text.mm("<gray>  " + rank++ + ". <yellow>" + Text.esc(e.name()) + " <dark_gray>- " + value.apply(e)));
+        }
     }
 
     // ------------------------------------------------------------------ admin
@@ -253,6 +312,22 @@ public final class FishCommand implements CommandExecutor, TabCompleter {
                 }
                 player.teleport(loc);
             }
+            case "setboard" -> {
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage(Text.msg("<red>Commande réservée aux joueurs."));
+                    return;
+                }
+                arena.board(player.getLocation().add(0, 2.2, 0));
+                plugin.arenas().save();
+                plugin.stats().refreshBoards();
+                sender.sendMessage(Text.msg("<green>Panneau de classement placé au-dessus de toi pour l'arène <white>" + Text.esc(arena.name()) + "<green>."));
+            }
+            case "removeboard" -> {
+                arena.board(null);
+                plugin.arenas().save();
+                plugin.stats().refreshBoards();
+                sender.sendMessage(Text.msg("<green>Panneau de classement retiré."));
+            }
             case "removehut" -> {
                 if (plugin.games().forArena(arena.name()) != null) {
                     sender.sendMessage(Text.msg("<red>Une partie est en cours sur cette arène."));
@@ -353,7 +428,7 @@ public final class FishCommand implements CommandExecutor, TabCompleter {
         List<String> out = new ArrayList<>();
         boolean admin = sender.hasPermission("cleanfishing.admin");
         if (args.length == 1) {
-            out.addAll(List.of("join", "leave", "codex", "menu"));
+            out.addAll(List.of("join", "leave", "codex", "menu", "titres", "top", "pouvoirs"));
             if (admin) {
                 out.add("admin");
             }

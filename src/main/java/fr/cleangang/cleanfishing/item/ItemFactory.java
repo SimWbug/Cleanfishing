@@ -24,9 +24,11 @@ public final class ItemFactory {
     public static final String TAG_MENU = "MENU";
     public static final String TAG_ADMIN = "ADMIN";
     public static final String TAG_LEAVE = "LEAVE";
+    public static final String TAG_OPTIONS = "OPTIONS";
 
     public static final int SLOT_ROD = 0;
     public static final int SLOT_MENU = 1; // slot 2 de la hotbar
+    public static final int SLOT_OPTIONS = 2;
     public static final int SLOT_ADMIN = 5;
     public static final int SLOT_LEAVE = 7;
     public static final int SLOT_CODEX = 8;
@@ -138,6 +140,19 @@ public final class ItemFactory {
         return stack;
     }
 
+    public ItemStack optionsItem() {
+        ItemStack stack = new ItemStack(Material.HEART_OF_THE_SEA);
+        stack.editMeta(meta -> {
+            meta.displayName(Text.item("<aqua><bold>Rôle & mode"));
+            meta.lore(List.of(
+                    Text.item("<gray>Clic droit : choisir ton rôle"),
+                    Text.item("<gray>(harponneur, fileteur, artificier)"),
+                    Text.item("<gray>et voter pour le mode <dark_red>hardcore<gray>.")));
+            meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, TAG_OPTIONS);
+        });
+        return stack;
+    }
+
     /** Équipement de départ. En salle d'attente (lobby = true) : menu des îles et bouton quitter en plus. */
     public void giveKit(Player player, boolean lobby) {
         PlayerInventory inv = player.getInventory();
@@ -146,6 +161,7 @@ public final class ItemFactory {
         if (lobby) {
             inv.setItem(SLOT_MENU, menuItem());
             inv.setItem(SLOT_LEAVE, leaveItem());
+            inv.setItem(SLOT_OPTIONS, optionsItem());
         }
         if (player.hasPermission("cleanfishing.admin")) {
             inv.setItem(SLOT_ADMIN, adminItem());
@@ -199,7 +215,7 @@ public final class ItemFactory {
         PlayerInventory inv = player.getInventory();
         for (int i = 0; i < inv.getSize(); i++) {
             String tag = tag(inv.getItem(i));
-            if (TAG_MENU.equals(tag) || TAG_LEAVE.equals(tag)) {
+            if (TAG_MENU.equals(tag) || TAG_LEAVE.equals(tag) || TAG_OPTIONS.equals(tag)) {
                 inv.setItem(i, null);
             }
         }

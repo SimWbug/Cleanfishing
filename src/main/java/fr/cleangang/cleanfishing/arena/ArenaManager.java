@@ -46,6 +46,7 @@ public final class ArenaManager {
                     read(s.getConfigurationSection("gertrude")),
                     read(s.getConfigurationSection("francis")));
             arena.radius(s.getInt("radius", 0));
+            arena.boardPos(read(s.getConfigurationSection("board")));
             arenas.put(key(name), arena);
         }
         plugin.getLogger().info(arenas.size() + " arène(s) chargée(s).");
@@ -60,6 +61,7 @@ public final class ArenaManager {
             write(yaml, base + ".lobby", arena.lobbyPos());
             write(yaml, base + ".gertrude", arena.gertrudePos());
             write(yaml, base + ".francis", arena.francisPos());
+            write(yaml, base + ".board", arena.boardPos());
             if (arena.radius() > 0) {
                 yaml.set(base + ".radius", arena.radius());
             }

@@ -27,6 +27,20 @@ public final class Fx {
         player.playSound(player.getLocation(), key, SoundCategory.PLAYERS, volume, pitch);
     }
 
+    /** Son entendu par ce joueur seulement, joué à une position donnée. */
+    public static void soundFor(Player player, Location at, String key, float volume, float pitch) {
+        player.playSound(at, key, SoundCategory.AMBIENT, volume, pitch);
+    }
+
+    /** Musique (catégorie Musique : réglable par le joueur dans ses options de son). */
+    public static void music(Player player, String key, float volume) {
+        player.playSound(player.getLocation(), key, SoundCategory.MUSIC, volume, 1f);
+    }
+
+    public static void stopMusic(Player player, String key) {
+        player.stopSound(key, SoundCategory.MUSIC);
+    }
+
     public static void particle(Location loc, String key, int count, double dx, double dy, double dz, double speed) {
         if (loc.getWorld() == null) {
             return;

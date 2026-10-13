@@ -24,6 +24,7 @@ public final class CodexGui {
 
     public static final int PREV_SLOT = 45;
     public static final int NEXT_SLOT = 53;
+    public static final int TITLES_SLOT = 47;
     private static final int PER_PAGE = 45;
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy").withZone(ZoneId.systemDefault());
 
@@ -83,6 +84,17 @@ public final class CodexGui {
             inventory.setItem(NEXT_SLOT, arrow("<yellow>Page suivante"));
         }
         inventory.setItem(49, summary(plugin, id, list));
+        ItemStack titles = new ItemStack(Material.NAME_TAG);
+        int unlocked = plugin.codex().achievementCount(id);
+        titles.editMeta(m -> {
+            m.displayName(Text.item("<gold>Succès & titres"));
+            m.lore(List.of(
+                    Text.item("<gray>Débloqués : <white>" + unlocked + "/" + fr.cleangang.cleanfishing.progress.Achievement.values().length),
+                    Text.item("<gray>Choisis le titre affiché devant ton pseudo."),
+                    Component.empty(),
+                    Text.item("<yellow>Clic")));
+        });
+        inventory.setItem(TITLES_SLOT, titles);
         player.openInventory(inventory);
     }
 

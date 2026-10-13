@@ -1,0 +1,45 @@
+{
+ "providers": [
+  {
+   "type": "space",
+   "advances": {
+    "\uf801": -1,
+    "\uf811": 1,
+    "\uf802": -2,
+    "\uf812": 2,
+    "\uf803": -4,
+    "\uf813": 4,
+    "\uf804": -8,
+    "\uf814": 8,
+    "\uf805": -16,
+    "\uf815": 16,
+    "\uf806": -32,
+    "\uf816": 32,
+    "\uf807": -64,
+    "\uf817": 64,
+    "\uf808": -128,
+    "\uf818": 128,
+    "\uf809": -256,
+    "\uf819": 256
+   }
+  },
+  {
+   "type": "bitmap",
+   "file": "cleanfishing:gui/shop.png",
+   "ascent": 13,
+   "height": 222,
+   "chars": [
+    "\ue000"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "cleanfishing:gui/francis.png",
+   "ascent": 13,
+   "height": 222,
+   "chars": [
+    "\ue001"
+   ]
+  }
+ ]
+}

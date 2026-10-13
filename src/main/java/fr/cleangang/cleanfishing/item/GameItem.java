@@ -24,7 +24,15 @@ public enum GameItem {
             "<gray>ont plus de chances d'être rares.")),
     SAND_TIMER("<yellow>Sablier", Material.CLOCK, List.of(
             "<gray>Clic droit : ajoute du temps",
-            "<gray>à la journée en cours pour toute l'équipe."));
+            "<gray>à la journée en cours pour toute l'équipe.")),
+    GOLDEN_LURE("<gold>Leurre légendaire", Material.NAUTILUS_SHELL, List.of(
+            "<gray>Clic droit : tes 3 prochaines prises",
+            "<gray>sont au moins <light_purple>épiques</light_purple>.",
+            "<dark_gray>Article rare de Gertrude.")),
+    DYNAMITE_CRATE("<dark_red>Caisse de dynamite", Material.TNT_MINECART, List.of(
+            "<gray>Clic droit : la lancer dans l'eau.",
+            "<gray>Énorme explosion : remonte 8 à 14 poissons.",
+            "<dark_gray>Article rare de Gertrude."));
 
     private final String displayName;
     private final Material material;

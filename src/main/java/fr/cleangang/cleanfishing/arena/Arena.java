@@ -32,6 +32,8 @@ public final class Arena {
     private Pos lobby;
     private Pos gertrude;
     private Pos francis;
+    /** Panneau de classement flottant (optionnel). */
+    private Pos board;
     /** Rayon de la zone de jeu autour du spawn ; 0 = valeur par défaut de config.yml (zone.default-radius). */
     private int radius;
 
@@ -103,6 +105,22 @@ public final class Arena {
 
     public void francis(Location loc) {
         this.francis = Pos.of(loc);
+    }
+
+    public Location board() {
+        return resolve(board);
+    }
+
+    public void board(Location loc) {
+        this.board = loc == null ? null : Pos.of(loc);
+    }
+
+    public Pos boardPos() {
+        return board;
+    }
+
+    public void boardPos(Pos pos) {
+        this.board = pos;
     }
 
     public Pos spawnPos() {

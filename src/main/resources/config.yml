@@ -25,6 +25,117 @@ game:
   # Canne à pêche donnée au début de la partie : durée de l'enchantement Appât (Lure) 0-5
   rod-lure-level: 2
 
+difficulty:
+  # À partir de cette journée, les paliers montent plus vite... mais les poissons rapportent plus.
+  ramp-from-day: 5
+  extra-target-growth: 1.15      # palier x1.15 de plus à chaque journée à partir de ramp-from-day
+  value-bonus-per-day: 0.05      # +5 % de valeur des poissons par journée à partir de ramp-from-day
+
+hardcore:
+  # Mode voté dans la salle d'attente (majorité des joueurs). Classement à part.
+  enabled: true
+  target-multiplier: 1.5         # paliers x1.5
+  day-duration-multiplier: 0.8   # journées 20 % plus courtes
+  value-multiplier: 1.25         # poissons payés x1.25 (pas de report de cagnotte en hardcore)
+
+levels:
+  # Niveaux par partie : chaque prise rapporte de l'expérience (barre d'XP du joueur), remise à zéro à chaque partie.
+  enabled: true
+  xp-base: 60          # XP pour passer du niveau 0 au niveau 1
+  xp-growth: 1.25      # chaque niveau demande 25 % d'XP en plus
+  xp:
+    common: 10
+    uncommon: 18
+    rare: 35
+    epic: 70
+    legendary: 150
+    item: 6
+
+cards:
+  # Cartes de pouvoir en 3D qui apparaissent devant le joueur : il vise une carte et clique pour la prendre.
+  count: 3             # nombre de cartes proposées (2 à 4)
+  every: [2, 3]        # une carte tous les 2 puis 3 niveaux (niveaux 2, 5, 7, 10, 12...)
+  timeout-seconds: 30  # au-delà, la carte visée (ou une au hasard) est prise automatiquement
+  # Désactiver un pouvoir : cards.powers.<nom>.enabled: false
+  # (luck, fast_bite, double_pay, gold_fever, scholar, double_hook, treasure, pocket_timer, tip, friend, quick_hands, abyss_call)
+  powers: {}
+
+events:
+  # Événements aléatoires pendant une journée, annoncés par un titre à l'écran.
+  enabled: true
+  per-day: 2
+  from-day: 1
+  golden-shoal:          # banc de poissons dorés : valeur x2
+    enabled: true
+    weight: 3
+    duration-seconds: 60
+    value-multiplier: 2.0
+  storm:                 # tempête : ça mord moins vite, mais plus de poissons rares
+    enabled: true
+    weight: 2
+    duration-seconds: 90
+    bite-multiplier: 1.5
+    luck-multiplier: 2.0
+  fog:                   # brouillard : vision réduite, poissons rares plus fréquents
+    enabled: true
+    weight: 2
+    duration-seconds: 90
+    luck-multiplier: 1.6
+    darkness: 1          # 0 = pas d'effet d'obscurité
+  low-tide:              # marée basse : ça mord vite, plus d'objets pêchés
+    enabled: true
+    weight: 2
+    duration-seconds: 60
+    bite-multiplier: 0.5
+    item-chance-multiplier: 2.0
+
+upgrades:
+  # Améliorations permanentes (pour la partie) achetées chez Gertrude. Une entrée de 'prices' = un niveau.
+  rod:
+    prices: [400, 900]
+    bite-faster-per-level: 0.15   # -15 % de temps d'attente par niveau
+    luck-per-level: 0.25          # +25 % de chances de poissons rares par niveau
+  boots:
+    prices: [250, 600]            # vitesse I puis II
+  bag:
+    prices: [350, 800]
+    extra-fish-chance-per-level: 0.15   # 15 % (niv. 1) / 30 % (niv. 2) de chances d'un poisson en plus
+
+ambience:
+  enabled: true
+  # Musique jouée au début de chaque journée (catégorie Musique). Clé d'un son vanilla ou de ton resource pack.
+  music: "music.under_water"
+  music-volume: 0.6
+  day-start-sound: "item.goat_horn.sound.0"
+  seagull-sound: "entity.parrot.ambient"
+  waves-sound: "block.water.ambient"
+  fireworks: true
+
+leaderboard:
+  # Panneau flottant : /cfish admin setboard <arène> (ou le bouton dans les outils admin)
+  refresh-seconds: 60
+
+resource-pack:
+  # Interfaces illustrées (boutique de Gertrude avec portrait 3D et bulle, Francis). Les joueurs sans le pack
+  # gardent les interfaces classiques. Le pack s'AJOUTE aux autres packs du serveur.
+  enabled: false
+  # 1) Le plus simple : le plugin sert lui-même le pack. Ouvre ce port (TCP) sur ta box / ton hébergeur
+  #    et mets l'adresse publique du serveur (ex. cle4nergang.fr).
+  self-host:
+    enabled: true
+    port: 8164
+    public-address: ""
+  # 2) Ou téléverse plugins/CleanFishing/CleanFishing-pack.zip ailleurs et mets son lien direct ici
+  #    (le sha1 est calculé à partir du dossier pack/ ; renseigne-le seulement si tu téléverses un autre zip).
+  url: ""
+  sha1: ""
+  # Quand l'envoyer : "game" (en rejoignant une partie) ou "join" (à la connexion au serveur)
+  send-on: game
+  required: false
+  prompt: "<aqua>CleanFishing <gray>: interfaces illustrées de Gertrude et Francis"
+  # true si tu as fusionné le pack dans le resource pack principal de ton serveur
+  assume-loaded: false
+
 zone:
   # Zone de jeu = disque autour du spawn de l'arène, de ce rayon en blocs (toutes hauteurs).
   # Les monstres hostiles n'y apparaissent pas. Rayon propre à une arène : /cfish admin setradius <arène> <rayon>
@@ -109,8 +220,29 @@ items:
   sand-timer:
     # Secondes ajoutées à la journée en cours
     bonus-seconds: 60
+  golden-lure:
+    casts: 3
+  dynamite-crate:
+    min-fish: 8
+    max-fish: 14
 
 shop:
+  # Chaque lot ne s'achète qu'une fois : acheté, il disparaît de l'étal (pour toute l'équipe)
+  single-purchase: true
+  # Un même objet peut apparaître plusieurs fois dans l'étal du jour (ex. 2 lots d'appâts), au plus :
+  max-same-item: 2
+  # Une promotion par jour sur un article au hasard
+  deal:
+    enabled: true
+    percent: 30
+  # Le 5e article est un article rare, en un seul exemplaire pour toute l'équipe
+  rare:
+    enabled: true
+    stock: 1
+  rare-pool:
+    GOLDEN_LURE:    { price: 450, weight: 5, amount: 1 }
+    DYNAMITE_CRATE: { price: 550, weight: 4, amount: 1 }
+    SAND_TIMER:     { price: 320, weight: 2, amount: 2 }
   # Relancer les 5 articles de Gertrude : payé avec la cagnotte, prix croissant. Remis à zéro chaque journée.
   reroll:
     base-price: 40       # prix du 1er changement
@@ -132,6 +264,15 @@ shop:
     BAIT: 3
     LUCKY_CHARM: 1
     SAND_TIMER: 1
+
+# Répliques de Gertrude et Francis (texte simple, sans couleurs). Laisse vide pour garder celles par défaut.
+# Situations : gertrude.greet / poor / reached / hurry / intermission / hardcore / thanks / broke / reroll / soldout
+#              gertrude.event.golden-shoal / storm / fog / low-tide ; francis.not-reached / reached / hurry / voted
+# Exemple :
+# dialogue:
+#   gertrude:
+#     greet: ["Bienvenue chez Gertrude !", "Qu'est-ce qui te ferait plaisir ?"]
+dialogue: {}
 
 debug:
   # true = écrit dans la console chaque clic sur Gertrude / Francis (aide au diagnostic)
