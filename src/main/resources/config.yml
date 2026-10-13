@@ -50,6 +50,11 @@ hotbar:
   menu-item:
     texture: ""
     fallback-material: TROPICAL_FISH
+  # Tête « Choisir une île » donnée HORS partie (slot 2 de la hotbar) pour rejoindre le jeu depuis le hub.
+  # Elle ne remplace jamais un autre objet. 'worlds' vide = tous les mondes ; sinon seulement ceux listés.
+  hub-item:
+    enabled: true
+    worlds: []
 
 npc:
   gertrude:

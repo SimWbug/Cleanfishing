@@ -25,10 +25,17 @@ public final class ArenaMenuGui {
 
     public static final class Holder implements InventoryHolder {
         private final List<String> arenas;
+        private final int adminSlot;
         private Inventory inventory;
 
-        Holder(List<String> arenas) {
+        Holder(List<String> arenas, int adminSlot) {
             this.arenas = arenas;
+            this.adminSlot = adminSlot;
+        }
+
+        /** Slot du bouton « Outils admin », ou -1 si le joueur n'est pas admin. */
+        public int adminSlot() {
+            return adminSlot;
         }
 
         /** Nom de l'arène affichée dans ce slot, ou null. */
@@ -47,16 +54,20 @@ public final class ArenaMenuGui {
     }
 
     public static void open(CleanFishingPlugin plugin, Player player) {
+        boolean admin = player.hasPermission("cleanfishing.admin");
+        int limit = admin ? MAX_ARENAS - 9 : MAX_ARENAS;
         List<Arena> arenas = new ArrayList<>(plugin.arenas().all());
-        if (arenas.size() > MAX_ARENAS) {
-            arenas = new ArrayList<>(arenas.subList(0, MAX_ARENAS));
+        if (arenas.size() > limit) {
+            arenas = new ArrayList<>(arenas.subList(0, limit));
         }
         List<String> names = new ArrayList<>();
         for (Arena a : arenas) {
             names.add(a.name());
         }
-        int rows = Math.max(1, Math.min(6, (arenas.size() + 8) / 9));
-        Holder holder = new Holder(names);
+        int arenaRows = Math.max(1, (arenas.size() + 8) / 9);
+        int rows = Math.min(6, admin ? arenaRows + 1 : arenaRows);
+        int adminSlot = admin ? rows * 9 - 5 : -1;
+        Holder holder = new Holder(names, adminSlot);
         Inventory inventory = Bukkit.createInventory(holder, rows * 9, Text.mm("<gold>Choisis ton île de pêche"));
         holder.inventory(inventory);
 
@@ -72,6 +83,17 @@ public final class ArenaMenuGui {
                         Text.item("<yellow>/cfish admin create <nom>")));
             });
             inventory.setItem(4, none);
+        }
+        if (admin) {
+            ItemStack tools = new ItemStack(Material.NETHER_STAR);
+            tools.editMeta(m -> {
+                m.displayName(Text.item("<red><bold>Outils admin"));
+                m.lore(List.of(Text.item("<gray>Gérer les arènes : lancer, arrêter,"),
+                        Text.item("<gray>définir les points, Gertrude, Francis..."),
+                        Component.empty(),
+                        Text.item("<yellow>Clic")));
+            });
+            inventory.setItem(adminSlot, tools);
         }
         player.openInventory(inventory);
     }

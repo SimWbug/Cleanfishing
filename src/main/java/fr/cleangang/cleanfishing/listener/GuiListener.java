@@ -78,6 +78,10 @@ public final class GuiListener implements Listener {
             if (event.getClickedInventory() != event.getView().getTopInventory()) {
                 return;
             }
+            if (event.getSlot() == menu.adminSlot() && player.hasPermission("cleanfishing.admin")) {
+                Bukkit.getScheduler().runTask(plugin, () -> AdminGui.openArenas(plugin, player));
+                return;
+            }
             String name = menu.arenaAt(event.getSlot());
             Arena arena = name == null ? null : plugin.arenas().get(name);
             if (arena == null) {

@@ -37,9 +37,11 @@ En rejoignant une partie, le joueur reçoit sa canne (slot 1) et son codex (slot
 
 | Slot | Objet | Clic droit |
 |---|---|---|
-| 4 | Tête de poisson « Choisir une île » | Liste des îles (libre / en cours / incomplète) ; cliquer sur une île rejoint ou **change d'île** tant que la partie n'a pas commencé |
-| 6 | Étoile du Nether « Outils admin » (admins seulement) | Liste des arènes, puis panneau : lancer, arrêter, téléportation, définir spawn / lobby / Gertrude / Francis à sa position, supprimer (Shift + clic) |
+| 2 | Tête de poisson « Choisir une île » | Liste des îles (libre / en cours / incomplète) ; cliquer sur une île rejoint ou **change d'île** tant que la partie n'a pas commencé |
+| 6 | Étoile du Nether « Outils admin » (admins seulement, en partie) ; hors partie, même accès via le bouton « Outils admin » de la liste des îles (tête de poisson) | Liste des arènes, puis panneau : lancer, arrêter, téléportation, définir spawn / lobby / Gertrude / Francis à sa position, supprimer (Shift + clic) |
 | 8 | Colorant rouge « Quitter la partie » | Quitte la partie et rend l'inventaire |
+
+La même tête est aussi donnée **hors partie** (connexion, respawn, retour de partie) au slot 2, sans jamais remplacer un autre objet, pour rejoindre le jeu depuis le hub. Réglages dans `hotbar.hub-item` (`enabled`, `worlds` pour la limiter à certains mondes). Elle ne tombe pas à la mort et ne peut pas être jetée.
 
 La tête et le bouton Quitter disparaissent quand la première journée commence ; les outils admin restent.
 

@@ -212,6 +212,7 @@ public final class Game {
         plugin.states().restore(player);
         plugin.codex().unload(id);
         if (!quitting) {
+            plugin.items().scheduleHubItem(player);
             player.sendMessage(Text.msg("Tu as quitté la partie."));
         }
         if (players.isEmpty()) {
@@ -453,6 +454,7 @@ public final class Game {
         p.hideBossBar(bossBar);
         plugin.states().restore(p);
         plugin.codex().unload(id);
+        plugin.items().scheduleHubItem(p);
     }
 
     private void cleanup() {

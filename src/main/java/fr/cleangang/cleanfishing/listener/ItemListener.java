@@ -36,11 +36,16 @@ public final class ItemListener implements Listener {
         }
         Player player = event.getPlayer();
         Game game = plugin.games().of(player);
-        if (game == null) {
-            return;
-        }
         ItemStack item = event.getItem();
         String tag = plugin.items().tag(item);
+        if (game == null) {
+            // hors partie : seule la tête « Choisir une île » du hub est active
+            if (ItemFactory.TAG_MENU.equals(tag) && player.hasPermission("cleanfishing.play")) {
+                event.setCancelled(true);
+                ArenaMenuGui.open(plugin, player);
+            }
+            return;
+        }
         if (tag == null) {
             return;
         }

@@ -26,7 +26,7 @@ public final class ItemFactory {
     public static final String TAG_LEAVE = "LEAVE";
 
     public static final int SLOT_ROD = 0;
-    public static final int SLOT_MENU = 3;
+    public static final int SLOT_MENU = 1; // slot 2 de la hotbar
     public static final int SLOT_ADMIN = 5;
     public static final int SLOT_LEAVE = 7;
     public static final int SLOT_CODEX = 8;
@@ -151,6 +151,47 @@ public final class ItemFactory {
             inv.setItem(SLOT_ADMIN, adminItem());
         }
         inv.setHeldItemSlot(SLOT_ROD);
+    }
+
+    /**
+     * Tête « Choisir une île » hors partie (slot 2) pour que les joueurs puissent rejoindre un jeu depuis le hub.
+     * Ne remplace jamais un autre objet ; désactivable (hotbar.hub-item.enabled) ou limitable à des mondes (hotbar.hub-item.worlds).
+     */
+    public void giveHubItem(Player player) {
+        if (!plugin.getConfig().getBoolean("hotbar.hub-item.enabled", true) || !player.isOnline()
+                || !player.hasPermission("cleanfishing.play")
+                || plugin.games().of(player) != null || plugin.states().hasPending(player.getUniqueId())) {
+            return;
+        }
+        List<String> worlds = plugin.getConfig().getStringList("hotbar.hub-item.worlds");
+        if (!worlds.isEmpty() && !worlds.contains(player.getWorld().getName())) {
+            removeHubItems(player);
+            return;
+        }
+        PlayerInventory inv = player.getInventory();
+        for (int i = 0; i < inv.getSize(); i++) {
+            if (i != SLOT_MENU && TAG_MENU.equals(tag(inv.getItem(i)))) {
+                inv.setItem(i, null);
+            }
+        }
+        ItemStack current = inv.getItem(SLOT_MENU);
+        if (current == null || current.getType().isAir() || TAG_MENU.equals(tag(current))) {
+            inv.setItem(SLOT_MENU, menuItem());
+        }
+    }
+
+    /** Donne la tête hors partie un instant plus tard (le temps que l'inventaire soit rendu). */
+    public void scheduleHubItem(Player player) {
+        org.bukkit.Bukkit.getScheduler().runTaskLater(plugin, () -> giveHubItem(player), 10L);
+    }
+
+    public void removeHubItems(Player player) {
+        PlayerInventory inv = player.getInventory();
+        for (int i = 0; i < inv.getSize(); i++) {
+            if (TAG_MENU.equals(tag(inv.getItem(i)))) {
+                inv.setItem(i, null);
+            }
+        }
     }
 
     /** Retire les objets réservés à la salle d'attente (au début de la première journée). */

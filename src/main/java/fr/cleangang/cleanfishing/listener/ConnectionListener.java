@@ -6,7 +6,12 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import fr.cleangang.cleanfishing.item.ItemFactory;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 /** Gère les déconnexions en pleine partie et les restaurations après un crash. */
@@ -31,6 +36,7 @@ public final class ConnectionListener implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        plugin.items().scheduleHubItem(player);
         if (!plugin.states().hasPending(player.getUniqueId()) || plugin.games().of(player) != null) {
             return;
         }
@@ -38,7 +44,34 @@ public final class ConnectionListener implements Listener {
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (player.isOnline() && plugin.games().of(player) == null) {
                 plugin.states().restore(player);
+                plugin.items().scheduleHubItem(player);
             }
         }, 10L);
+    }
+
+    @EventHandler
+    public void onRespawn(PlayerRespawnEvent event) {
+        plugin.items().scheduleHubItem(event.getPlayer());
+    }
+
+    @EventHandler
+    public void onWorldChange(PlayerChangedWorldEvent event) {
+        plugin.items().scheduleHubItem(event.getPlayer());
+    }
+
+    /** La tête du hub ne tombe pas à la mort. */
+    @EventHandler
+    public void onDeath(PlayerDeathEvent event) {
+        if (plugin.games().of(event.getPlayer()) == null) {
+            event.getDrops().removeIf(stack -> ItemFactory.TAG_MENU.equals(plugin.items().tag(stack)));
+        }
+    }
+
+    @EventHandler
+    public void onDrop(PlayerDropItemEvent event) {
+        if (plugin.games().of(event.getPlayer()) == null
+                && ItemFactory.TAG_MENU.equals(plugin.items().tag(event.getItemDrop().getItemStack()))) {
+            event.setCancelled(true);
+        }
     }
 }
